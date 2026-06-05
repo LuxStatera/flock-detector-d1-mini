@@ -14,7 +14,7 @@ This firmware and README were vibe coded with **[Claude](https://claude.ai)** by
 
 Flock Safety cameras periodically emit WiFi probe requests and other management frames. Researchers identified 31 OUI (MAC address) prefixes consistently associated with Flock camera deployments through field testing. This firmware puts the ESP8266 into promiscuous mode and passively listens on channels 1, 6, and 11 for packets matching those OUI prefixes.
 
-When a match is found, the buzzer chirps, the OLED highlights the detection, and the event is saved to flash storage (LittleFS). All detections persist across reboots.
+When a match is found, the buzzer chirps, the OLED highlights the detection, and the event is logged to flash storage (LittleFS). Detection history resets on reboot.
 
 ### Detection Methods
 
@@ -62,7 +62,7 @@ FLOCK-YOU  CH:6   D:3    ← header (channel + detection count)
 3m02  FS:OK BZ  3/100    ← uptime, storage, buzzer, slots used
 ```
 
-**Signal quality:** H = strong (> -60 dBm), M = medium (-60 to -75), L = weak (< -75)
+**Signal quality:** H = strong (> -60 dBm), M = medium (-60 to -74), L = weak (≤ -75)
 
 ![Detection list](images/mini_list.jpg)
 
@@ -139,7 +139,7 @@ Heartbeat status every 30 seconds:
 - **Passive sniffing** — no transmitting, no network connections
 - **31 OUI signatures** — matches known Flock Safety hardware prefixes
 - **Channel hopping** — cycles channels 1, 6, 11 (350ms dwell)
-- **Persistent storage** — detections saved to LittleFS, survive reboots
+- **Session logging** — detections saved to LittleFS during each session (resets on reboot)
 - **Deduplication** — 5-second cooldown per MAC, 30-second rediscovery window
 - **Heartbeat beeps** — soft reminder when a detected camera is still in range
 - **100 detection slots** — optimized for ESP8266's limited RAM (~80KB)
