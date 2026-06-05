@@ -6,7 +6,7 @@ A tiny, portable Flock Safety camera detector built on an **ESP8266 D1 Mini** wi
 
 ## Credits
 
-This project is based on the original **[Flock You](https://github.com/colonelpanichacks/flock-you)** project by **[colonelpanichacks](https://github.com/colonelpanichacks)**. Additional contributions from **@NitekryDPaul** (WiFi promiscuous detection research and OUI list), **DeFlockJoplin** (wildcard-probe signature and 31st OUI), **@wgreenberg** (BLE manufacturer ID detection), and **[DeFlock](https://deflock.me)** (crowdsourced ALPR location data).
+This project is based on the original **[Flock You](https://github.com/colonelpanichacks/flock-you)** project by **[colonelpanichacks](https://github.com/colonelpanichacks)**.
 
 This firmware and README were vibe coded with **[Claude](https://claude.ai)** by Anthropic.
 
