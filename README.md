@@ -2,7 +2,7 @@
 
 A tiny, portable Flock Safety camera detector built on an **ESP8266 D1 Mini** with a **128x64 SH1106 OLED display** and **piezo buzzer**. Passively sniffs WiFi traffic and alerts you when a Flock surveillance camera is nearby.
 
-![Boot screen](images/mini_boot.jpg)
+![Boot screen](images/d1_boot.jpg)
 
 ## Credits
 
@@ -49,7 +49,7 @@ D5 (GPIO 14)→    Buzzer (+)
 
 ## Screen Layout
 
-![Scanning screen](images/mini_scan.jpg)
+![Scanning screen](images/d1_scan.jpg)
 
 ```
 FLK-HUNT  CH:6   D:3    ← header (channel + detection count)
@@ -64,7 +64,9 @@ FLK-HUNT  CH:6   D:3    ← header (channel + detection count)
 
 **Signal quality:** H = strong (> -60 dBm), M = medium (-60 to -74), L = weak (≤ -75)
 
-![Detection list](images/mini_list.jpg)
+![Detection alert](images/d1_detect.jpg)
+
+![Detection list](images/d1_list.jpg)
 
 ## Audio Alerts
 
