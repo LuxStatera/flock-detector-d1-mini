@@ -79,10 +79,10 @@ FLK-HUNT  CH:6   D:3    ← header (channel + detection count)
 ## Building & Flashing
 
 ### What You Need
-- **ESP8266 D1 Mini** (or any ESP8266 board)
-- **SH1106 128x64 I2C OLED** display
+- **Any ESP8266 board** — D1 Mini, NodeMCU, bare ESP-12F, etc.
+- **SH1106 128x64 I2C OLED** display (1.3" — not SSD1306)
 - **Passive piezo buzzer** (optional but recommended)
-- **USB Micro-B cable** (data cable, not charge-only)
+- **USB cable** (data cable, not charge-only)
 - A computer with Arduino IDE
 
 ### Step 1: Install Arduino IDE
@@ -114,14 +114,34 @@ Download and install from [arduino.cc/en/software](https://www.arduino.cc/en/sof
 
 ### Step 5: Configure Board Settings
 
-- **Tools → Board:** `LOLIN(WEMOS) D1 R2 & mini` or `Generic ESP8266 Module`
-- **Tools → Upload Speed:** `921600`
-- **Tools → Flash Size:** `4MB` (if using Generic ESP8266 Module)
-- **Tools → Port:** Select the port that appears when you plug in your board
+Select **Tools → Board → `Generic ESP8266 Module`** and configure:
 
-> Any ESP8266 board works — the code uses raw GPIO numbers, not board-specific pin labels. If using a different board, just wire the OLED and buzzer to the same GPIOs (4, 5, 14).
+| Setting | Value |
+|---------|-------|
+| **Board** | `Generic ESP8266 Module` |
+| **Flash Size** | `4MB (FS:1MB OTA:~1019KB)` |
+| **Upload Speed** | `921600` |
+| **Port** | Select the port that appears when you plug in your board |
 
-> If no port appears, install the [CH340 driver](https://sparks.gogo.co.nz/ch340.html).
+> **Using a D1 Mini?** You can also select `LOLIN(WEMOS) D1 R2 & mini` which pre-configures the flash size for you.
+
+> **Any ESP8266 board works.** The firmware uses raw GPIO numbers — not board-specific pin labels like D1/D2. Just wire the OLED and buzzer to the correct GPIOs:
+> - **GPIO 4** → OLED SDA
+> - **GPIO 5** → OLED SCL
+> - **GPIO 14** → Buzzer (+)
+
+> **No port showing up?** Install the [CH340 driver](https://sparks.gogo.co.nz/ch340.html) (D1 Mini / NodeMCU) or [CP2102 driver](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers) depending on your board's USB chip.
+
+### Display Compatibility
+
+This firmware is written for the **SH1106** OLED controller (common on 1.3" modules). If you have the smaller **SSD1306** (0.96" OLED), change line 113 in the sketch from:
+```
+U8G2_SH1106_128X64_NONAME_F_HW_I2C display(...)
+```
+to:
+```
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C display(...)
+```
 
 ### Step 6: Upload
 
