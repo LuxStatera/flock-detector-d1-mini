@@ -52,17 +52,17 @@ D5 (GPIO 14)→    Buzzer (+)
 ![Scanning screen](images/d1_scan.jpg)
 
 ```
-FLK-HUNT  CH:6   C:3    ← header (channel + camera count)
+FLK-HUNT  CH:6   C:3     ← header (channel + camera count)
 ──────────────────────
->70:c9:4e:xx -62 ~75  6  ← newest (highlighted = recent)
- 3c:91:80:xx -78 ~200 1  ← MAC, RSSI, ~distance(ft), channel
- d8:f3:bc:xx -85 ~450 11
- 82:6b:f2:xx -71 ~150 6
+     Scanning...         ← animated dots
+     2 in range          ← active cameras nearby
 ──────────────────────
 3m02  FS:OK BZ  3/100    ← uptime, storage, buzzer, slots used
 ```
 
-**Distance estimates** are approximate and based on RSSI signal strength. Actual range varies with walls, trees, and antenna orientation.
+On detection, an **alert screen** shows full camera details (MAC, signal, range, channel, method, hits), followed by a **camera list** showing all detections.
+
+**Range labels** (CLOSE / NEAR / FAR) are rough estimates based on RSSI signal strength. Actual range varies with environment — walls, trees, and antenna orientation all affect the signal.
 
 ![Detection alert](images/d1_detect.jpg)
 

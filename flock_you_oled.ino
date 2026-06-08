@@ -528,17 +528,18 @@ static void drainAlertQueue() {
 // OLED RENDERING
 // ============================================================
 
-static int rssiToFeet(int8_t rssi) {
-  if (rssi > -40) return 10;
-  if (rssi > -50) return 30;
-  if (rssi > -55) return 50;
-  if (rssi > -60) return 75;
-  if (rssi > -65) return 100;
-  if (rssi > -70) return 150;
-  if (rssi > -75) return 200;
-  if (rssi > -80) return 300;
-  if (rssi > -85) return 450;
-  return 600;
+static const char* rssiLabel(int8_t rssi) {
+  if (rssi > -60) return "CLOSE";
+  if (rssi > -75) return "NEAR";
+  return "FAR";
+}
+
+static int countActive() {
+  int n = 0;
+  unsigned long now = millis();
+  for (int i = 0; i < fyDetCount; i++)
+    if ((now - fyDet[i].lastSeen) < 30000) n++;
+  return n;
 }
 
 // ── SCAN SCREEN ──
@@ -564,10 +565,14 @@ static void drawScanScreen() {
   int sw = display.getStrWidth(scanMsg);
   display.drawStr((DISP_W - sw) / 2, 30, scanMsg);
 
-  char ouiMsg[20];
-  snprintf(ouiMsg, sizeof(ouiMsg), "%d scan patterns", (int)OUI_COUNT);
-  int ow = display.getStrWidth(ouiMsg);
-  display.drawStr((DISP_W - ow) / 2, 42, ouiMsg);
+  int active = countActive();
+  char rangeMsg[20];
+  if (active > 0)
+    snprintf(rangeMsg, sizeof(rangeMsg), "%d in range", active);
+  else
+    snprintf(rangeMsg, sizeof(rangeMsg), "No cameras");
+  int rw = display.getStrWidth(rangeMsg);
+  display.drawStr((DISP_W - rw) / 2, 42, rangeMsg);
 
   display.drawHLine(2, 55, DISP_W - 4);
 
@@ -610,9 +615,9 @@ static void drawAlertScreen() {
   display.drawStr(2, 18, "MAC:");
   display.drawStr(28, 18, d.mac);
 
-  // Signal + distance
+  // Signal + range
   char sigBuf[20];
-  snprintf(sigBuf, sizeof(sigBuf), "%ddBm %dft", d.rssi, rssiToFeet(d.rssi));
+  snprintf(sigBuf, sizeof(sigBuf), "%ddBm %s", d.rssi, rssiLabel(d.rssi));
   display.drawStr(2, 28, "SIG:");
   display.drawStr(28, 28, sigBuf);
 
@@ -662,20 +667,14 @@ static void drawListScreen() {
     char rssiBuf[6];
     snprintf(rssiBuf, sizeof(rssiBuf), "%d", d.rssi);
 
-    char ftBuf[8];
-    snprintf(ftBuf, sizeof(ftBuf), "%dft", rssiToFeet(d.rssi));
+    const char* range = rssiLabel(d.rssi);
 
     char chStr[4];
     snprintf(chStr, sizeof(chStr), "%d", d.channel);
 
-    // Dim stale entries
-    if (!active) {
-      display.drawStr(2, y, shortMac);
-    } else {
-      display.drawStr(2, y, shortMac);
-    }
+    display.drawStr(2, y, shortMac);
     display.drawStr(62, y, rssiBuf);
-    display.drawStr(90, y, ftBuf);
+    display.drawStr(90, y, range);
     int chW = display.getStrWidth(chStr);
     display.drawStr(DISP_W - chW - 2, y, chStr);
 
