@@ -114,9 +114,12 @@ Download and install from [arduino.cc/en/software](https://www.arduino.cc/en/sof
 
 ### Step 5: Configure Board Settings
 
-- **Tools → Board:** `LOLIN(WEMOS) D1 R2 & mini`
+- **Tools → Board:** `LOLIN(WEMOS) D1 R2 & mini` or `Generic ESP8266 Module`
 - **Tools → Upload Speed:** `921600`
-- **Tools → Port:** Select the port that appears when you plug in the D1 Mini
+- **Tools → Flash Size:** `4MB` (if using Generic ESP8266 Module)
+- **Tools → Port:** Select the port that appears when you plug in your board
+
+> Any ESP8266 board works — the code uses raw GPIO numbers, not board-specific pin labels. If using a different board, just wire the OLED and buzzer to the same GPIOs (4, 5, 14).
 
 > If no port appears, install the [CH340 driver](https://sparks.gogo.co.nz/ch340.html).
 
