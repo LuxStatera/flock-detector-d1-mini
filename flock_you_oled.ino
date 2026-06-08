@@ -173,6 +173,14 @@ static unsigned long alertFlashUntil   = 0;
 static unsigned long uptimeStart       = 0;
 static uint8_t       scanDotPhase      = 0;
 
+// UI states: SCAN → ALERT (4s) → LIST (5s) → SCAN
+#define UI_SCAN   0
+#define UI_ALERT  1
+#define UI_LIST   2
+static uint8_t       uiState          = UI_SCAN;
+static unsigned long uiStateStart     = 0;
+static int           alertDetIdx      = -1;
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -504,7 +512,12 @@ static void drainAlertQueue() {
     if (chirpWorthy) {
       newDetectChirp();
       fyLastHbBeepAt = millis();
-      alertFlashUntil = millis() + 600;
+      // Find this detection's index for the alert screen
+      for (int i = 0; i < fyDetCount; i++) {
+        if (strcasecmp(fyDet[i].mac, macStr) == 0) { alertDetIdx = i; break; }
+      }
+      uiState = UI_ALERT;
+      uiStateStart = millis();
     }
 
     screenDirty = true;
@@ -528,22 +541,11 @@ static int rssiToFeet(int8_t rssi) {
   return 600;
 }
 
-static void drawScreen() {
-  display.clearBuffer();
-
-  bool isFlashing = (alertFlashUntil > 0 && millis() < alertFlashUntil);
-
+// ── SCAN SCREEN ──
+static void drawScanScreen() {
   display.setFont(u8g2_font_5x8_tr);
-
-  if (isFlashing) {
-    display.drawBox(2, 0, DISP_W - 4, 9);
-    display.setDrawColor(0);
-    display.drawStr(2, HEADER_Y, "! FLOCK HUNTER !");
-  } else {
-    display.setDrawColor(1);
-    display.drawStr(2, HEADER_Y, "FLK-HUNT");
-  }
   display.setDrawColor(1);
+  display.drawStr(2, HEADER_Y, "FLK-HUNT");
 
   char chBuf[8];
   snprintf(chBuf, sizeof(chBuf), "CH:%d", currentChannel);
@@ -556,56 +558,16 @@ static void drawScreen() {
 
   display.drawHLine(2, 9, DISP_W - 4);
 
-  if (fyDetCount == 0) {
-    scanDotPhase = (scanDotPhase + 1) % 4;
-    char scanMsg[20];
-    snprintf(scanMsg, sizeof(scanMsg), "Scanning%.*s", scanDotPhase, "...");
-    int sw = display.getStrWidth(scanMsg);
-    display.drawStr((DISP_W - sw) / 2, 30, scanMsg);
+  scanDotPhase = (scanDotPhase + 1) % 4;
+  char scanMsg[20];
+  snprintf(scanMsg, sizeof(scanMsg), "Scanning%.*s", scanDotPhase, "...");
+  int sw = display.getStrWidth(scanMsg);
+  display.drawStr((DISP_W - sw) / 2, 30, scanMsg);
 
-    char ouiMsg[16];
-    snprintf(ouiMsg, sizeof(ouiMsg), "%d scan patterns", (int)OUI_COUNT);
-    int ow = display.getStrWidth(ouiMsg);
-    display.drawStr((DISP_W - ow) / 2, 42, ouiMsg);
-  } else {
-    int y = LIST_Y_START;
-    int startIdx = fyDetCount - 1;
-
-    for (int row = 0; row < LOG_ROWS && startIdx - row >= 0; row++) {
-      int i = startIdx - row;
-      FYDetection& d = fyDet[i];
-
-      bool recent = (millis() - d.lastSeen) < 5000;
-
-      if (recent) {
-        display.drawBox(2, y - 7, DISP_W - 4, 9);
-        display.setDrawColor(0);
-      }
-
-      char shortMac[12];
-      snprintf(shortMac, sizeof(shortMac), "%.11s", d.mac);
-
-      char rssiBuf[6];
-      snprintf(rssiBuf, sizeof(rssiBuf), "%d", d.rssi);
-
-      char chStr[4];
-      snprintf(chStr, sizeof(chStr), "%d", d.channel);
-
-      display.drawStr(2, y, shortMac);
-      display.drawStr(62, y, rssiBuf);
-
-      char ftBuf[6];
-      snprintf(ftBuf, sizeof(ftBuf), "~%dft", rssiToFeet(d.rssi));
-      display.drawStr(88, y, ftBuf);
-
-      display.drawStr(115, y, chStr);
-
-      // count omitted — distance estimate takes priority on 128px display
-
-      display.setDrawColor(1);
-      y += 9;
-    }
-  }
+  char ouiMsg[20];
+  snprintf(ouiMsg, sizeof(ouiMsg), "%d scan patterns", (int)OUI_COUNT);
+  int ow = display.getStrWidth(ouiMsg);
+  display.drawStr((DISP_W - ow) / 2, 42, ouiMsg);
 
   display.drawHLine(2, 55, DISP_W - 4);
 
@@ -627,6 +589,129 @@ static void drawScreen() {
 #if USE_BUZZER
   display.drawStr(80, FOOTER_Y, "BZ");
 #endif
+}
+
+// ── ALERT SCREEN ──
+static void drawAlertScreen() {
+  if (alertDetIdx < 0 || alertDetIdx >= fyDetCount) return;
+  FYDetection& d = fyDet[alertDetIdx];
+
+  display.setFont(u8g2_font_5x8_tr);
+
+  // Inverted header
+  display.drawBox(0, 0, DISP_W, 10);
+  display.setDrawColor(0);
+  const char* hdr = "CAMERA DETECTED";
+  int hw = display.getStrWidth(hdr);
+  display.drawStr((DISP_W - hw) / 2, HEADER_Y, hdr);
+  display.setDrawColor(1);
+
+  // MAC
+  display.drawStr(2, 18, "MAC:");
+  display.drawStr(28, 18, d.mac);
+
+  // Signal + distance
+  char sigBuf[20];
+  snprintf(sigBuf, sizeof(sigBuf), "%ddBm ~%dft", d.rssi, rssiToFeet(d.rssi));
+  display.drawStr(2, 28, "SIG:");
+  display.drawStr(28, 28, sigBuf);
+
+  // Channel + method
+  char chBuf[8];
+  snprintf(chBuf, sizeof(chBuf), "CH:%d", d.channel);
+  display.drawStr(2, 38, chBuf);
+  display.drawStr(40, 38, d.method);
+
+  // Hits
+  char hitBuf[12];
+  snprintf(hitBuf, sizeof(hitBuf), "Hits:%d", d.count);
+  display.drawStr(2, 48, hitBuf);
+
+  // OUI prefix
+  char ouiBuf[16];
+  snprintf(ouiBuf, sizeof(ouiBuf), "OUI:%.8s", d.mac);
+  display.drawStr(60, 48, ouiBuf);
+
+  display.drawHLine(2, 55, DISP_W - 4);
+  display.drawStr(2, FOOTER_Y, "! FLOCK CAMERA !");
+}
+
+// ── LIST SCREEN ──
+static void drawListScreen() {
+  display.setFont(u8g2_font_5x8_tr);
+  display.setDrawColor(1);
+
+  // Header
+  char hdr[20];
+  snprintf(hdr, sizeof(hdr), "CAMERAS: %d", fyDetCount);
+  display.drawStr(2, HEADER_Y, hdr);
+  display.drawHLine(2, 9, DISP_W - 4);
+
+  int y = LIST_Y_START;
+  int startIdx = fyDetCount - 1;
+
+  for (int row = 0; row < LOG_ROWS && startIdx - row >= 0; row++) {
+    int i = startIdx - row;
+    FYDetection& d = fyDet[i];
+
+    bool active = (millis() - d.lastSeen) < 30000;
+
+    char shortMac[12];
+    snprintf(shortMac, sizeof(shortMac), "%.11s", d.mac);
+
+    char rssiBuf[6];
+    snprintf(rssiBuf, sizeof(rssiBuf), "%d", d.rssi);
+
+    char ftBuf[8];
+    snprintf(ftBuf, sizeof(ftBuf), "~%dft", rssiToFeet(d.rssi));
+
+    char chStr[4];
+    snprintf(chStr, sizeof(chStr), "%d", d.channel);
+
+    // Dim stale entries
+    if (!active) {
+      display.drawStr(2, y, shortMac);
+    } else {
+      display.drawStr(2, y, shortMac);
+    }
+    display.drawStr(62, y, rssiBuf);
+    display.drawStr(90, y, ftBuf);
+    int chW = display.getStrWidth(chStr);
+    display.drawStr(DISP_W - chW - 2, y, chStr);
+
+    y += 9;
+  }
+
+  display.drawHLine(2, 55, DISP_W - 4);
+  unsigned long upSec = (millis() - uptimeStart) / 1000;
+  char upBuf[10];
+  if (upSec < 3600)
+    snprintf(upBuf, sizeof(upBuf), "%lum%02lu", upSec / 60, upSec % 60);
+  else
+    snprintf(upBuf, sizeof(upBuf), "%luh%02lu", upSec / 3600, (upSec % 3600) / 60);
+  display.drawStr(2, FOOTER_Y, upBuf);
+
+  char slotBuf[10];
+  snprintf(slotBuf, sizeof(slotBuf), "%d/%d", fyDetCount, MAX_DETECTIONS);
+  int slotW = display.getStrWidth(slotBuf);
+  display.drawStr(DISP_W - slotW - 2, FOOTER_Y, slotBuf);
+}
+
+// ── MAIN DRAW ──
+static void drawScreen() {
+  display.clearBuffer();
+
+  switch (uiState) {
+    case UI_ALERT:
+      drawAlertScreen();
+      break;
+    case UI_LIST:
+      drawListScreen();
+      break;
+    default:
+      drawScanScreen();
+      break;
+  }
 
   display.sendBuffer();
 }
@@ -676,8 +761,15 @@ static void heartbeatTick() {
 static void screenTick() {
   unsigned long now = millis();
 
-  if (alertFlashUntil > 0 && now >= alertFlashUntil) {
-    alertFlashUntil = 0;
+  // UI state transitions
+  if (uiState == UI_ALERT && (now - uiStateStart) > 4000) {
+    uiState = (fyDetCount > 0) ? UI_LIST : UI_SCAN;
+    uiStateStart = now;
+    screenDirty = true;
+  }
+  if (uiState == UI_LIST && (now - uiStateStart) > 5000) {
+    uiState = UI_SCAN;
+    uiStateStart = now;
     screenDirty = true;
   }
 
