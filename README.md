@@ -52,17 +52,17 @@ D5 (GPIO 14)→    Buzzer (+)
 ![Scanning screen](images/d1_scan.jpg)
 
 ```
-FLK-HUNT  CH:6   D:3    ← header (channel + detection count)
+FLK-HUNT  CH:6   C:3    ← header (channel + camera count)
 ──────────────────────
->70:c9:4e:xx -62 H  6   ← newest (highlighted = recent)
- 3c:91:80:xx -78 M  1   ← MAC, RSSI, signal quality, channel
- d8:f3:bc:xx -85 L 11
- 82:6b:f2:xx -71 M  6
+>70:c9:4e:xx -62 ~75  6  ← newest (highlighted = recent)
+ 3c:91:80:xx -78 ~200 1  ← MAC, RSSI, ~distance(ft), channel
+ d8:f3:bc:xx -85 ~450 11
+ 82:6b:f2:xx -71 ~150 6
 ──────────────────────
 3m02  FS:OK BZ  3/100    ← uptime, storage, buzzer, slots used
 ```
 
-**Signal quality:** H = strong (> -60 dBm), M = medium (-60 to -74), L = weak (≤ -75)
+**Distance estimates** are approximate and based on RSSI signal strength. Actual range varies with walls, trees, and antenna orientation.
 
 ![Detection alert](images/d1_detect.jpg)
 
@@ -142,6 +142,15 @@ to:
 ```
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C display(...)
 ```
+
+### Alternative Boards
+
+**HW-634A Generic ESP8266:** This board uses different default I2C pins. Change lines 110-111 in the sketch:
+```
+#define OLED_SDA 14
+#define OLED_SCL 12
+```
+Note: GPIO 14 is the default buzzer pin, so if you're using a buzzer with the HW-634A, change `BUZZER_PIN` to a free GPIO as well.
 
 ### Step 6: Upload
 

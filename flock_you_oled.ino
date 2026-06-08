@@ -515,10 +515,17 @@ static void drainAlertQueue() {
 // OLED RENDERING
 // ============================================================
 
-static char rssiChar(int8_t rssi) {
-  if (rssi > -60) return 'H';
-  if (rssi > -75) return 'M';
-  return 'L';
+static int rssiToFeet(int8_t rssi) {
+  if (rssi > -40) return 10;
+  if (rssi > -50) return 30;
+  if (rssi > -55) return 50;
+  if (rssi > -60) return 75;
+  if (rssi > -65) return 100;
+  if (rssi > -70) return 150;
+  if (rssi > -75) return 200;
+  if (rssi > -80) return 300;
+  if (rssi > -85) return 450;
+  return 600;
 }
 
 static void drawScreen() {
@@ -543,7 +550,7 @@ static void drawScreen() {
   display.drawStr(60, HEADER_Y, chBuf);
 
   char detBuf[8];
-  snprintf(detBuf, sizeof(detBuf), "D:%d", fyDetCount);
+  snprintf(detBuf, sizeof(detBuf), "C:%d", fyDetCount);
   int detW = display.getStrWidth(detBuf);
   display.drawStr(DISP_W - detW - 2, HEADER_Y, detBuf);
 
@@ -557,7 +564,7 @@ static void drawScreen() {
     display.drawStr((DISP_W - sw) / 2, 30, scanMsg);
 
     char ouiMsg[16];
-    snprintf(ouiMsg, sizeof(ouiMsg), "%d OUI targets", (int)OUI_COUNT);
+    snprintf(ouiMsg, sizeof(ouiMsg), "%d scan patterns", (int)OUI_COUNT);
     int ow = display.getStrWidth(ouiMsg);
     display.drawStr((DISP_W - ow) / 2, 42, ouiMsg);
   } else {
@@ -585,19 +592,15 @@ static void drawScreen() {
       snprintf(chStr, sizeof(chStr), "%d", d.channel);
 
       display.drawStr(2, y, shortMac);
-      display.drawStr(68, y, rssiBuf);
+      display.drawStr(62, y, rssiBuf);
 
-      char sq = rssiChar(d.rssi);
-      char sqBuf[2] = {sq, '\0'};
-      display.drawStr(95, y, sqBuf);
+      char ftBuf[6];
+      snprintf(ftBuf, sizeof(ftBuf), "~%d", rssiToFeet(d.rssi));
+      display.drawStr(88, y, ftBuf);
 
-      display.drawStr(105, y, chStr);
+      display.drawStr(115, y, chStr);
 
-      if (d.count > 1 && d.count < 100) {
-        char cBuf[5];
-        snprintf(cBuf, sizeof(cBuf), "x%d", d.count);
-        display.drawStr(118, y, cBuf);
-      }
+      // count omitted — distance estimate takes priority on 128px display
 
       display.setDrawColor(1);
       y += 9;
@@ -640,7 +643,7 @@ static void drawSplash() {
   int w2 = display.getStrWidth(t2);
   display.drawStr((DISP_W - w2) / 2, 34, t2);
 
-  const char* t3 = "32 OUI Signatures";
+  const char* t3 = "32 Scan Patterns";
   int w3 = display.getStrWidth(t3);
   display.drawStr((DISP_W - w3) / 2, 48, t3);
 
