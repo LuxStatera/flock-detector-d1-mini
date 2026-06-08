@@ -612,7 +612,7 @@ static void drawAlertScreen() {
 
   // Signal + distance
   char sigBuf[20];
-  snprintf(sigBuf, sizeof(sigBuf), "%ddBm ~%dft", d.rssi, rssiToFeet(d.rssi));
+  snprintf(sigBuf, sizeof(sigBuf), "%ddBm %dft", d.rssi, rssiToFeet(d.rssi));
   display.drawStr(2, 28, "SIG:");
   display.drawStr(28, 28, sigBuf);
 
@@ -663,7 +663,7 @@ static void drawListScreen() {
     snprintf(rssiBuf, sizeof(rssiBuf), "%d", d.rssi);
 
     char ftBuf[8];
-    snprintf(ftBuf, sizeof(ftBuf), "~%dft", rssiToFeet(d.rssi));
+    snprintf(ftBuf, sizeof(ftBuf), "%dft", rssiToFeet(d.rssi));
 
     char chStr[4];
     snprintf(chStr, sizeof(chStr), "%d", d.channel);
