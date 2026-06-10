@@ -538,7 +538,7 @@ static int countActive() {
   int n = 0;
   unsigned long now = millis();
   for (int i = 0; i < fyDetCount; i++)
-    if ((now - fyDet[i].lastSeen) < 30000) n++;
+    if ((now - fyDet[i].lastSeen) < 10000) n++;
   return n;
 }
 
@@ -659,7 +659,7 @@ static void drawListScreen() {
     int i = startIdx - row;
     FYDetection& d = fyDet[i];
 
-    bool active = (millis() - d.lastSeen) < 30000;
+    bool active = (millis() - d.lastSeen) < 10000;
 
     char shortMac[12];
     snprintf(shortMac, sizeof(shortMac), "%.11s", d.mac);
